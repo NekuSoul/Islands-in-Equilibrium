@@ -1,5 +1,6 @@
 ﻿using Assets.Game.Code;
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace Assets.Game.Scripts
 {
@@ -10,6 +11,14 @@ namespace Assets.Game.Scripts
         public TileManager TileManager;
         public Sprite LevelSprite;
 
+        public int AvailableWaterTiles;
+        public int AvailablePlainTiles;
+        public int AvailableMountainTiles;
+        public int AvailableDesertTiles;
+        public int AvailableForestTiles;
+        public int AvailableVillageTiles;
+        public int AvailableCityTiles;
+
         public int CityCount;
         public int ForestCount;
         private bool _change;
@@ -17,13 +26,21 @@ namespace Assets.Game.Scripts
         private GameObject[,] _tilesRep;
         private Tile[,] _tiles;
 
+        public int CurrentWaterTiles;
+        public int CurrentPlainTiles;
+        public int CurrentMountainTiles;
+        public int CurrentDesertTiles;
+        public int CurrentForestTiles;
+        public int CurrentVillageTiles;
+        public int CurrentCityTiles;
+
         // Fuck Unity!
         private Color BetterYellow = new Color(1, 1, 0, 1);
 
         // Use this for initialization
         public void Start()
         {
-
+            LoadLevel();
         }
 
         // Update is called once per frame
@@ -34,8 +51,27 @@ namespace Assets.Game.Scripts
 
         public void LoadLevel()
         {
+            if (LevelSprite == null)
+                return;
+
             CityCount = 0;
             ForestCount = 0;
+
+            CurrentWaterTiles = AvailableWaterTiles;
+            CurrentPlainTiles = AvailablePlainTiles;
+            CurrentMountainTiles = AvailableMountainTiles;
+            CurrentDesertTiles = AvailableDesertTiles;
+            CurrentForestTiles = AvailableForestTiles;
+            CurrentVillageTiles = AvailableVillageTiles;
+            CurrentCityTiles = AvailableCityTiles;
+
+            if (_tilesRep != null)
+                foreach (GameObject tile in _tilesRep)
+                {
+                    if (tile != null)
+                        Destroy(tile);
+                }
+
             _tiles = new Tile[Width, Height];
             _tilesRep = new GameObject[Width, Height];
 
@@ -65,7 +101,24 @@ namespace Assets.Game.Scripts
             }
         }
 
-        private void ApplyTile(int x, int y, Tile tile)
+        public TileInfo? GetTileFromObject(GameObject target)
+        {
+            if (LevelSprite == null)
+                return null;
+
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    if (target == _tilesRep[x, y])
+                        return new TileInfo(x, y, _tiles[x, y]);
+                }
+            }
+
+            return null;
+        }
+
+        public void ApplyTile(int x, int y, Tile tile)
         {
             if (_tiles[x, y] == tile && _tilesRep[x, y] != null)
                 return;
@@ -94,7 +147,7 @@ namespace Assets.Game.Scripts
             GameObject newTile = Instantiate(sourceTile);
             newTile.transform.parent = transform;
             newTile.name = string.Format("[{0}|{1}] {2}", x, y, sourceTile.name);
-            newTile.transform.position = new Vector3(x - (Width - 1) / 2f, y - (Height - 1) / 2f, 0);
+            newTile.transform.localPosition = new Vector3(x - (Width - 1) / 2f, y - (Height - 1) / 2f, 0);
             _tiles[x, y] = tile;
             _tilesRep[x, y] = newTile;
 
@@ -112,6 +165,9 @@ namespace Assets.Game.Scripts
 
         private void SpreadTiles(Tile tileA, Tile tileB)
         {
+            if (LevelSprite == null)
+                return;
+
             Tile[,] oldTiles = _tiles;
             _tiles = new Tile[Width, Height];
 
